@@ -1,5 +1,4 @@
 # app.py - Fixed Stock Zodiac Analysis Program
-
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +12,6 @@ import matplotlib.dates as mdates
 # ======================
 # STOCK ZODIAC ANALYSIS
 # ======================
-
 class StockZodiacAnalysis:
     def __init__(self, stock_name, zodiac_sign=None, incorporation_date=None):
         """
@@ -582,7 +580,6 @@ class StockZodiacAnalysis:
 # ======================
 # STREAMLIT APP
 # ======================
-
 def main():
     # Set page configuration
     st.set_page_config(
@@ -817,8 +814,9 @@ def main():
             with col2:
                 st.markdown("#### All Critical Dates")
                 critical_df = pd.DataFrame(critical_dates)
-                critical_df['Date'] = critical_df['Date'].dt.strftime('%Y-%m-%d')
-                critical_df = critical_df[['Date', 'Prediction', 'Significance', 'Score']]
+                # FIXED: Changed 'Date' to 'date' to match the actual column name
+                critical_df['date'] = critical_df['date'].dt.strftime('%Y-%m-%d')
+                critical_df = critical_df[['date', 'prediction', 'significance', 'score']]
                 st.dataframe(critical_df, use_container_width=True)
         else:
             st.info("No critical dates predicted for the next 90 days")
