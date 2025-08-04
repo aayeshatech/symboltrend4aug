@@ -723,6 +723,64 @@ class StockZodiacAnalysis:
         plt.tight_layout()
         return fig
     
+    def create_critical_dates_chart(self):
+        """Create a chart showing critical dates for the stock"""
+        if not self.critical_dates:
+            return None
+        
+        # Create chart
+        fig, ax = plt.subplots(figsize=(14, 8))
+        
+        # Prepare data
+        dates = [data['date'] for data in self.critical_dates]
+        scores = [data['score'] for data in self.critical_dates]
+        predictions = [data['prediction'] for data in self.critical_dates]
+        significances = [data['significance'] for data in self.critical_dates]
+        
+        # Create color map based on prediction
+        colors = ['green' if pred == 'Rise' else 'red' for pred in predictions]
+        
+        # Create size map based on significance
+        sizes = [100 if sig == 'High' else 50 for sig in significances]
+        
+        # Plot scatter
+        scatter = ax.scatter(dates, scores, c=colors, s=sizes, alpha=0.7, edgecolors='black')
+        
+        # Add zero line
+        ax.axhline(y=0, color='black', linestyle='-', alpha=0.5)
+        
+        # Add labels for each point
+        for i, (date, score, pred, sig) in enumerate(zip(dates, scores, predictions, significances)):
+            ax.annotate(f"{pred}\n{sig}", xy=(date, score), xytext=(0, 20),
+                        textcoords='offset points', ha='center', va='bottom',
+                        bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.7))
+        
+        # Formatting
+        ax.set_title(f'{self.stock_name} - Critical Dates Prediction', 
+                     fontsize=16, fontweight='bold')
+        ax.set_ylabel('Bullish/Bearish Score', fontsize=12)
+        ax.set_xlabel('Date', fontsize=12)
+        
+        # Format x-axis
+        ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        
+        # Add legend
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor='green', alpha=0.7, label='Rise'),
+            Patch(facecolor='red', alpha=0.7, label='Fall'),
+            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='gray', 
+                      markersize=10, label='Medium Significance', linestyle='None'),
+            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='gray', 
+                      markersize=15, label='High Significance', linestyle='None')
+        ]
+        ax.legend(handles=legend_elements, loc='upper right')
+        
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        return fig
+    
     def create_monthly_detail_chart(self, month_index, current_price=None):
         """Create a detailed chart for a specific month"""
         if not self.monthly_analysis or month_index >= len(self.monthly_analysis):
@@ -1004,6 +1062,12 @@ def main():
         border-radius: 10px;
         margin-bottom: 20px;
     }
+    .publish-section {
+        background-color: #fff3e0;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -1241,6 +1305,29 @@ def main():
             # Display detailed report for the selected month
             with st.expander(f"View Full Report for {selected_month}"):
                 report = analysis.generate_monthly_report(month_index)
+                st.markdown(report, unsafe_allow_html=True)
+        
+        # Month report publisher
+        st.subheader("Publish Monthly Report")
+        st.markdown("#### Select a month to publish its report")
+        
+        # Create month selector for publishing
+        publish_month = st.selectbox("Select a month to publish", month_options, key="publish_month")
+        
+        if publish_month:
+            # Get the index of the selected month
+            publish_month_index = month_options.index(publish_month)
+            
+            # Display publish button
+            if st.button(f"Publish Report for {publish_month}", key="publish_button"):
+                # Generate the report
+                report = analysis.generate_monthly_report(publish_month_index)
+                
+                # Display success message
+                st.success(f"Report for {publish_month} has been published successfully!")
+                
+                # Display the published report
+                st.markdown("### Published Report:")
                 st.markdown(report, unsafe_allow_html=True)
         
         # Coming month report
