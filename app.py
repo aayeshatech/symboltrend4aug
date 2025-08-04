@@ -1,4 +1,4 @@
-# app.py - Fixed Stock Zodiac Analysis Program
+# app.py - Enhanced Stock Zodiac Analysis Program
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, date
 import pandas as pd
 from matplotlib.dates import DateFormatter, MonthLocator
 import matplotlib.dates as mdates
+from matplotlib.gridspec import GridSpec
 
 # ======================
 # STOCK ZODIAC ANALYSIS
@@ -44,6 +45,7 @@ class StockZodiacAnalysis:
         self.trend_prediction = None
         self.best_month = None
         self.critical_dates = None
+        self.monthly_analysis = None
     
     def _determine_zodiac_sign(self, stock_name):
         """
@@ -216,8 +218,8 @@ class StockZodiacAnalysis:
         
         return self.trend_prediction
     
-    def predict_best_month(self):
-        """Predict the best month for the stock based on planetary transits"""
+    def predict_monthly_analysis(self):
+        """Predict analysis for each month for the next 12 months"""
         # Get current date
         current_date = datetime.now()
         
@@ -243,7 +245,7 @@ class StockZodiacAnalysis:
             # Check aspects to the stock's zodiac sign
             future_aspects = self._check_aspects_to_sign(self.zodiac_angle)
             
-            # Calculate score for this month
+            # Calculate score for this month (ensure non-negative)
             month_score = 0
             for aspect in future_aspects:
                 planet = aspect['planet']
@@ -257,26 +259,47 @@ class StockZodiacAnalysis:
                 elif influence == 'Bearish' and aspect_type in ['Opposition', 'Square']:
                     month_score -= strength
             
+            # Ensure score is non-negative
+            month_score = max(0, month_score)
+            
+            # Determine key aspects for this month
+            key_aspects = []
+            for aspect in future_aspects:
+                planet = aspect['planet']
+                aspect_type = aspect['aspect']
+                strength = aspect['strength']
+                influence = self._get_planet_influence(planet)
+                
+                key_aspects.append({
+                    'planet': planet,
+                    'aspect': aspect_type,
+                    'influence': influence,
+                    'strength': strength
+                })
+            
             months_analysis.append({
                 'month': target_month,
                 'year': target_year,
                 'month_name': target_date.strftime('%B'),
                 'score': month_score,
-                'aspects': future_aspects
+                'aspects': key_aspects,
+                'date': target_date
             })
         
-        # Find the month with the highest score
-        best_month = max(months_analysis, key=lambda x: x['score'])
+        self.monthly_analysis = months_analysis
         
-        self.best_month = {
-            'month': best_month['month'],
-            'year': best_month['year'],
-            'month_name': best_month['month_name'],
-            'score': best_month['score'],
-            'aspects': best_month['aspects']
-        }
+        # Find the best month
+        if months_analysis:
+            best_month_data = max(months_analysis, key=lambda x: x['score'])
+            self.best_month = {
+                'month': best_month_data['month'],
+                'year': best_month_data['year'],
+                'month_name': best_month_data['month_name'],
+                'score': best_month_data['score'],
+                'aspects': best_month_data['aspects']
+            }
         
-        return self.best_month
+        return months_analysis
     
     def predict_critical_dates(self):
         """Predict dates when the stock is expected to rise or fall"""
@@ -341,7 +364,7 @@ class StockZodiacAnalysis:
                 })
         
         self.critical_dates = critical_dates
-        return self.critical_dates
+        return critical_dates
     
     def create_planetary_chart(self):
         """Create a chart showing planetary positions and aspects to the stock's zodiac sign"""
@@ -422,57 +445,21 @@ class StockZodiacAnalysis:
         plt.tight_layout()
         return fig
     
-    def create_trend_chart(self):
+    def create_trend_chart(self, current_price=None):
         """Create a chart showing the predicted trend for the next 12 months"""
-        # Get current date
-        current_date = datetime.now()
-        
-        # Calculate monthly scores for the next 12 months
-        months_data = []
-        for i in range(12):
-            target_date = current_date + timedelta(days=30 * i)
-            days_diff = (target_date - current_date).days
-            
-            # Calculate planetary positions for that month
-            future_positions = {}
-            for planet, angle in self.planetary_positions.items():
-                speed = self._get_planet_speed(planet)
-                future_angle = (angle + speed * days_diff) % 360
-                future_positions[planet] = future_angle
-            
-            # Check aspects to the stock's zodiac sign
-            future_aspects = self._check_aspects_to_sign(self.zodiac_angle)
-            
-            # Calculate score for this month
-            month_score = 0
-            for aspect in future_aspects:
-                planet = aspect['planet']
-                aspect_type = aspect['aspect']
-                strength = aspect['strength']
-                
-                influence = self._get_planet_influence(planet)
-                
-                if influence == 'Bullish' and aspect_type in ['Conjunction', 'Trine', 'Sextile']:
-                    month_score += strength
-                elif influence == 'Bearish' and aspect_type in ['Opposition', 'Square']:
-                    month_score -= strength
-            
-            months_data.append({
-                'date': target_date,
-                'month_name': target_date.strftime('%B %Y'),
-                'score': month_score
-            })
+        if not self.monthly_analysis:
+            self.predict_monthly_analysis()
         
         # Create chart
         fig, ax = plt.subplots(figsize=(14, 8))
         
-        # Plot scores
-        dates = [data['date'] for data in months_data]
-        scores = [data['score'] for data in months_data]
-        month_names = [data['month_name'] for data in months_data]
+        # Prepare data
+        dates = [data['date'] for data in self.monthly_analysis]
+        scores = [data['score'] for data in self.monthly_analysis]
+        month_names = [data['month_name'] for data in self.monthly_analysis]
         
         # Create color map based on score
-        colors = ['red' if score < 0 else 'green' for score in scores]
+        colors = ['green' if score > 5 else 'orange' if score > 2 else 'red' for score in scores]
         
         bars = ax.bar(dates, scores, color=colors, alpha=0.7)
         
@@ -499,7 +486,8 @@ class StockZodiacAnalysis:
         # Add legend
         from matplotlib.patches import Patch
         legend_elements = [
-            Patch(facecolor='green', alpha=0.7, label='Bullish'),
+            Patch(facecolor='green', alpha=0.7, label='Strong Bullish'),
+            Patch(facecolor='orange', alpha=0.7, label='Moderate Bullish'),
             Patch(facecolor='red', alpha=0.7, label='Bearish')
         ]
         ax.legend(handles=legend_elements, loc='upper right')
@@ -507,13 +495,34 @@ class StockZodiacAnalysis:
         # Highlight best month
         if self.best_month:
             best_date = datetime(self.best_month['year'], self.best_month['month'], 15)
-            for i, data in enumerate(months_data):
+            for i, data in enumerate(self.monthly_analysis):
                 if data['date'].month == self.best_month['month'] and data['date'].year == self.best_month['year']:
                     ax.annotate('Best Month', xy=(dates[i], scores[i]), xytext=(0, 20),
                                 textcoords='offset points', ha='center', va='bottom',
                                 bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.7),
                                 arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
                     break
+        
+        # Add price projection if current price is provided
+        if current_price:
+            # Create a secondary y-axis for price
+            ax2 = ax.twinx()
+            
+            # Calculate projected prices based on scores
+            projected_prices = []
+            for i, score in enumerate(scores):
+                # Simple projection: higher score = higher price
+                price_change = (score - 5) * 0.02  # 2% change per point difference from 5
+                projected_price = current_price * (1 + price_change)
+                projected_prices.append(projected_price)
+            
+            # Plot projected prices
+            ax2.plot(dates, projected_prices, 'b-', linewidth=2, label='Projected Price')
+            ax2.set_ylabel('Projected Price ($)', fontsize=12)
+            ax2.legend(loc='upper left')
+            
+            # Format price axis
+            ax2.yaxis.set_major_formatter('${x:,.2f}')
         
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
@@ -576,6 +585,202 @@ class StockZodiacAnalysis:
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
         return fig
+    
+    def create_combined_chart(self, current_price=None):
+        """Create a combined chart showing monthly trends and critical dates"""
+        if not self.monthly_analysis:
+            self.predict_monthly_analysis()
+        
+        # Create figure with GridSpec for more control
+        fig = plt.figure(figsize=(16, 10))
+        gs = GridSpec(2, 1, height_ratios=[3, 1], hspace=0.3)
+        
+        # Main chart for monthly trends
+        ax1 = fig.add_subplot(gs[0])
+        
+        # Prepare data
+        dates = [data['date'] for data in self.monthly_analysis]
+        scores = [data['score'] for data in self.monthly_analysis]
+        
+        # Create color map based on score
+        colors = ['green' if score > 5 else 'orange' if score > 2 else 'red' for score in scores]
+        
+        bars = ax1.bar(dates, scores, color=colors, alpha=0.7, width=20)
+        
+        # Add zero line
+        ax1.axhline(y=0, color='black', linestyle='-', alpha=0.5)
+        
+        # Formatting
+        ax1.set_title(f'{self.stock_name} - Monthly Performance & Critical Dates', 
+                     fontsize=16, fontweight='bold')
+        ax1.set_ylabel('Bullish/Bearish Score', fontsize=12)
+        
+        # Format x-axis
+        ax1.xaxis.set_major_formatter(DateFormatter('%b %Y'))
+        ax1.xaxis.set_major_locator(MonthLocator())
+        plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
+        
+        # Add value labels on bars
+        for bar, score in zip(bars, scores):
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{score:.1f}', ha='center', va='bottom' if height < 0 else 'top')
+        
+        # Add critical dates as points
+        if self.critical_dates:
+            critical_dates = [data['date'] for data in self.critical_dates]
+            critical_scores = [data['score'] for data in self.critical_dates]
+            critical_predictions = [data['prediction'] for data in self.critical_dates]
+            
+            # Create color map based on prediction
+            critical_colors = ['green' if pred == 'Rise' else 'red' for pred in critical_predictions]
+            
+            # Plot critical dates
+            ax1.scatter(critical_dates, critical_scores, c=critical_colors, s=100, 
+                       alpha=0.8, edgecolors='black', zorder=5)
+        
+        # Add price projection if current price is provided
+        if current_price:
+            # Create a secondary y-axis for price
+            ax2 = ax1.twinx()
+            
+            # Calculate projected prices based on scores
+            projected_prices = []
+            for i, score in enumerate(scores):
+                # Simple projection: higher score = higher price
+                price_change = (score - 5) * 0.02  # 2% change per point difference from 5
+                projected_price = current_price * (1 + price_change)
+                projected_prices.append(projected_price)
+            
+            # Plot projected prices
+            ax2.plot(dates, projected_prices, 'b-', linewidth=2, label='Projected Price')
+            ax2.set_ylabel('Projected Price ($)', fontsize=12)
+            ax2.legend(loc='upper left')
+            
+            # Format price axis
+            ax2.yaxis.set_major_formatter('${x:,.2f}')
+        
+        ax1.grid(True, alpha=0.3)
+        
+        # Bottom chart for key aspects
+        ax2 = fig.add_subplot(gs[1])
+        ax2.set_title('Key Aspects by Month', fontsize=14)
+        ax2.set_xlabel('Month', fontsize=12)
+        ax2.set_ylabel('Aspects', fontsize=12)
+        
+        # Create a timeline of key aspects
+        aspect_dates = []
+        aspect_labels = []
+        aspect_colors = []
+        
+        for month_data in self.monthly_analysis:
+            month_date = month_data['date']
+            for aspect in month_data['aspects']:
+                aspect_dates.append(month_date)
+                label = f"{aspect['planet']} {aspect['aspect']}"
+                aspect_labels.append(label)
+                
+                if aspect['influence'] == 'Bullish':
+                    aspect_colors.append('green')
+                elif aspect['influence'] == 'Bearish':
+                    aspect_colors.append('red')
+                else:
+                    aspect_colors.append('gray')
+        
+        # Plot aspects as scatter points
+        if aspect_dates:
+            y_positions = range(len(aspect_dates))
+            ax2.scatter(aspect_dates, y_positions, c=aspect_colors, s=50, alpha=0.7)
+            
+            # Add labels
+            for i, (date, label) in enumerate(zip(aspect_dates, aspect_labels)):
+                ax2.text(date, i, label, va='center', fontsize=8)
+            
+            # Format x-axis
+            ax2.xaxis.set_major_formatter(DateFormatter('%b %Y'))
+            ax2.xaxis.set_major_locator(MonthLocator())
+            plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+            
+            # Hide y-axis
+            ax2.set_yticks([])
+        
+        plt.tight_layout()
+        return fig
+    
+    def generate_coming_month_report(self):
+        """Generate a detailed report for the coming month"""
+        if not self.monthly_analysis:
+            self.predict_monthly_analysis()
+        
+        # Get the next month (index 1 because index 0 is current month)
+        if len(self.monthly_analysis) > 1:
+            coming_month = self.monthly_analysis[1]
+        else:
+            coming_month = self.monthly_analysis[0]
+        
+        # Generate report
+        report = f"""
+# {coming_month['month_name']} {coming_month['year']} Performance Report
+
+## Overall Score: {coming_month['score']:.1f}/10
+
+### Performance Assessment:
+"""
+        
+        if coming_month['score'] > 7:
+            report += "Strong Bullish trend expected. This month shows excellent potential for growth.\n\n"
+        elif coming_month['score'] > 5:
+            report += "Moderate Bullish trend expected. Positive performance is likely.\n\n"
+        elif coming_month['score'] > 3:
+            report += "Neutral to slightly Bullish trend expected. Mixed performance possible.\n\n"
+        else:
+            report += "Bearish trend expected. Caution is advised for this month.\n\n"
+        
+        report += "### Key Planetary Aspects:\n\n"
+        
+        for aspect in coming_month['aspects']:
+            influence = aspect['influence']
+            planet = aspect['planet']
+            aspect_type = aspect['aspect']
+            strength = aspect['strength']
+            
+            report += f"- **{planet} {aspect_type}**: {influence} influence (Strength: {strength}/5)\n"
+        
+        report += "\n### Critical Dates in This Month:\n\n"
+        
+        if self.critical_dates:
+            month_critical_dates = [
+                date for date in self.critical_dates 
+                if date['date'].month == coming_month['month'] and 
+                   date['date'].year == coming_month['year']
+            ]
+            
+            if month_critical_dates:
+                for date_data in month_critical_dates:
+                    date = date_data['date']
+                    prediction = date_data['prediction']
+                    significance = date_data['significance']
+                    
+                    report += f"- **{date.strftime('%Y-%m-%d')}**: Expected {prediction} ({significance} significance)\n"
+            else:
+                report += "No critical dates identified for this month.\n"
+        else:
+            report += "No critical dates identified for this month.\n"
+        
+        report += "\n### Trading Recommendations:\n\n"
+        
+        if coming_month['score'] > 5:
+            report += "- Consider long positions during favorable aspects\n"
+            report += "- Monitor for entry points around critical dates marked as 'Rise'\n"
+            report += "- Set stop-losses to protect against unexpected reversals\n"
+        else:
+            report += "- Consider short positions or hedging strategies\n"
+            report += "- Avoid new long positions during unfavorable aspects\n"
+            report += "- Be cautious around critical dates marked as 'Fall'\n"
+        
+        report += "\n*This report is generated based on astrological analysis and should be used in conjunction with other market analysis.*"
+        
+        return report
 
 # ======================
 # STREAMLIT APP
@@ -613,6 +818,12 @@ def main():
         margin-top: 2rem;
         margin-bottom: 2rem;
     }
+    .report-container {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -625,6 +836,9 @@ def main():
     
     # Stock name input
     stock_name = st.sidebar.text_input("Stock Name", value="AAPL")
+    
+    # Current price input (optional)
+    current_price = st.sidebar.number_input("Current Stock Price (Optional)", min_value=0.01, value=150.0, step=0.01)
     
     # Zodiac sign selection (optional)
     zodiac_signs = ['Auto-detect', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -720,76 +934,47 @@ def main():
             else:
                 st.info("No significant planetary influences")
         
-        # Predict and display best month
-        st.subheader("Best Month Prediction")
-        best_month = analysis.predict_best_month()
+        # Predict and display monthly analysis
+        st.subheader("Monthly Performance Analysis")
+        monthly_analysis = analysis.predict_monthly_analysis()
         
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("#### Best Performing Month")
-            st.success(f"**{best_month['month_name']} {best_month['year']}**")
-            st.markdown(f"**Score**: {best_month['score']:.1f}")
-            
-            st.markdown("#### Key Aspects in Best Month")
-            for aspect in best_month['aspects']:
-                planet = aspect['planet']
-                aspect_type = aspect['aspect']
-                influence = analysis._get_planet_influence(planet)
+            if analysis.best_month:
+                st.success(f"**{analysis.best_month['month_name']} {analysis.best_month['year']}**")
+                st.markdown(f"**Score**: {analysis.best_month['score']:.1f}")
                 
-                if influence == 'Bullish':
-                    st.success(f"{planet} {aspect_type}: Bullish")
-                elif influence == 'Bearish':
-                    st.error(f"{planet} {aspect_type}: Bearish")
-                else:
-                    st.info(f"{planet} {aspect_type}: Neutral")
-        
-        with col2:
-            st.markdown("#### Other Months Performance")
-            # Get all months data
-            current_date = datetime.now()
-            months_data = []
-            for i in range(12):
-                target_date = current_date + timedelta(days=30 * i)
-                days_diff = (target_date - current_date).days
-                
-                # Calculate planetary positions for that month
-                future_positions = {}
-                for planet, angle in analysis.planetary_positions.items():
-                    speed = analysis._get_planet_speed(planet)
-                    future_angle = (angle + speed * days_diff) % 360
-                    future_positions[planet] = future_angle
-                
-                # Check aspects to the stock's zodiac sign
-                future_aspects = analysis._check_aspects_to_sign(analysis.zodiac_angle)
-                
-                # Calculate score for this month
-                month_score = 0
-                for aspect in future_aspects:
+                st.markdown("#### Key Aspects in Best Month")
+                for aspect in analysis.best_month['aspects']:
                     planet = aspect['planet']
                     aspect_type = aspect['aspect']
-                    strength = aspect['strength']
+                    influence = aspect['influence']
                     
-                    influence = analysis._get_planet_influence(planet)
-                    
-                    if influence == 'Bullish' and aspect_type in ['Conjunction', 'Trine', 'Sextile']:
-                        month_score += strength
-                    elif influence == 'Bearish' and aspect_type in ['Opposition', 'Square']:
-                        month_score -= strength
-                
+                    if influence == 'Bullish':
+                        st.success(f"{planet} {aspect_type}: Bullish")
+                    elif influence == 'Bearish':
+                        st.error(f"{planet} {aspect_type}: Bearish")
+                    else:
+                        st.info(f"{planet} {aspect_type}: Neutral")
+            else:
+                st.info("No best month identified")
+        
+        with col2:
+            st.markdown("#### All Months Performance")
+            # Create a DataFrame for display
+            months_data = []
+            for month_data in monthly_analysis:
                 months_data.append({
-                    'month': target_date.strftime('%B %Y'),
-                    'score': month_score
+                    'Month': f"{month_data['month_name']} {month_data['year']}",
+                    'Score': month_data['score'],
+                    'Performance': 'Excellent' if month_data['score'] > 7 else 
+                                  'Good' if month_data['score'] > 5 else 
+                                  'Moderate' if month_data['score'] > 3 else 'Poor'
                 })
             
-            # Create a DataFrame for display
             months_df = pd.DataFrame(months_data)
-            
-            # Add performance indicator
-            months_df['Performance'] = months_df['score'].apply(
-                lambda x: 'Excellent' if x > 5 else ('Good' if x > 0 else 'Poor')
-            )
-            
             st.dataframe(months_df, use_container_width=True)
         
         # Predict and display critical dates
@@ -814,7 +999,6 @@ def main():
             with col2:
                 st.markdown("#### All Critical Dates")
                 critical_df = pd.DataFrame(critical_dates)
-                # FIXED: Changed 'Date' to 'date' to match the actual column name
                 critical_df['date'] = critical_df['date'].dt.strftime('%Y-%m-%d')
                 critical_df = critical_df[['date', 'prediction', 'significance', 'score']]
                 st.dataframe(critical_df, use_container_width=True)
@@ -824,6 +1008,11 @@ def main():
         # Display charts
         st.subheader("Visualizations")
         
+        # Combined chart
+        st.markdown("#### Combined Performance Chart")
+        fig_combined = analysis.create_combined_chart(current_price=current_price)
+        st.pyplot(fig_combined)
+        
         col1, col2 = st.columns(2)
         
         with col1:
@@ -832,16 +1021,15 @@ def main():
             st.pyplot(fig1)
         
         with col2:
-            st.markdown("#### Trend Prediction Chart")
-            fig2 = analysis.create_trend_chart()
-            st.pyplot(fig2)
-        
-        # Display critical dates chart if available
-        if critical_dates:
             st.markdown("#### Critical Dates Chart")
             fig3 = analysis.create_critical_dates_chart()
             if fig3:
                 st.pyplot(fig3)
+        
+        # Coming month report
+        st.subheader("Coming Month Performance Report")
+        report = analysis.generate_coming_month_report()
+        st.markdown(report, unsafe_allow_html=True)
         
         # Add disclaimer
         st.markdown("---")
