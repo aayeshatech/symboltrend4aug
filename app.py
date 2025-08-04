@@ -447,8 +447,13 @@ class StockZodiacAnalysis:
     
     def create_planetary_chart(self):
         """Create a chart showing planetary positions and aspects to the stock's zodiac sign"""
-        fig = plt.figure(figsize=(10, 10))
+        # Create figure with proper size
+        fig = plt.figure(figsize=(12, 12))
         ax = fig.add_subplot(111, polar=True)
+        
+        # Set background color for better visibility
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
         
         # Zodiac signs
         zodiac_signs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -521,7 +526,9 @@ class StockZodiacAnalysis:
         ax.set_xticks([])
         ax.set_yticks([])
         
+        # Adjust layout
         plt.tight_layout()
+        
         return fig
     
     def create_price_projection_chart(self, current_price=None):
@@ -529,18 +536,22 @@ class StockZodiacAnalysis:
         if not current_price or not self.price_projections:
             return None
         
-        # Create figure
-        fig, ax = plt.subplots(figsize=(14, 8))
+        # Create figure with proper size
+        fig, ax = plt.subplots(figsize=(16, 8))
+        
+        # Set background color for better visibility
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
         
         # Get price data
         daily_prices = self.price_projections['daily_prices']
         daily_dates = self.price_projections['daily_dates']
         significant_movements = self.price_projections['significant_movements']
         
-        # Plot price line
-        ax.plot(daily_dates, daily_prices, 'b-', linewidth=2, label='Projected Price')
+        # Plot price line with increased width for better visibility
+        ax.plot(daily_dates, daily_prices, 'b-', linewidth=3, label='Projected Price')
         
-        # Plot significant movements
+        # Plot significant movements with larger markers
         if significant_movements:
             for movement in significant_movements:
                 date = movement['date']
@@ -548,41 +559,44 @@ class StockZodiacAnalysis:
                 direction = movement['direction']
                 
                 if direction == 'Up':
-                    ax.scatter(date, price, color='green', s=100, alpha=0.7, edgecolors='black')
+                    ax.scatter(date, price, color='green', s=150, alpha=0.8, edgecolors='black', linewidth=2)
                     ax.annotate(f"Buy\n{date.strftime('%Y-%m-%d')}", 
                                xy=(date, price), xytext=(0, 20),
                                textcoords='offset points', ha='center', va='bottom',
-                               bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.7),
+                               bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.8),
                                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
                 else:
-                    ax.scatter(date, price, color='red', s=100, alpha=0.7, edgecolors='black')
+                    ax.scatter(date, price, color='red', s=150, alpha=0.8, edgecolors='black', linewidth=2)
                     ax.annotate(f"Sell\n{date.strftime('%Y-%m-%d')}", 
                                xy=(date, price), xytext=(0, -30),
                                textcoords='offset points', ha='center', va='top',
-                               bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.7),
+                               bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.8),
                                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
         
         # Formatting
         ax.set_title(f'{self.stock_name} - Price Projection Based on Planetary Aspects', 
-                     fontsize=16, fontweight='bold')
-        ax.set_ylabel('Price ($)', fontsize=12)
-        ax.set_xlabel('Date', fontsize=12)
+                     fontsize=18, fontweight='bold', pad=20)
+        ax.set_ylabel('Price ($)', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Date', fontsize=14, fontweight='bold')
         
         # Format x-axis
         ax.xaxis.set_major_formatter(DateFormatter('%b %Y'))
         ax.xaxis.set_major_locator(MonthLocator(interval=1))
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, fontsize=12)
         
         # Format y-axis
         ax.yaxis.set_major_formatter('${x:,.2f}')
+        plt.setp(ax.yaxis.get_majorticklabels(), fontsize=12)
         
-        # Add legend
-        ax.legend(loc='upper left')
+        # Add legend with larger font
+        ax.legend(loc='upper left', fontsize=12)
         
-        # Add grid
-        ax.grid(True, alpha=0.3)
+        # Add grid with better visibility
+        ax.grid(True, alpha=0.3, linestyle='--')
         
+        # Adjust layout
         plt.tight_layout()
+        
         return fig
     
     def create_bullish_bearish_timeline(self):
@@ -590,8 +604,12 @@ class StockZodiacAnalysis:
         if not self.monthly_analysis:
             self.predict_monthly_analysis()
         
-        # Create figure
-        fig, ax = plt.subplots(figsize=(14, 8))
+        # Create figure with proper size
+        fig, ax = plt.subplots(figsize=(16, 8))
+        
+        # Set background color for better visibility
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
         
         # Prepare data
         dates = [data['date'] for data in self.monthly_analysis]
@@ -613,24 +631,25 @@ class StockZodiacAnalysis:
                 color = 'red'  # Bearish
                 label = 'Bearish'
             
-            # Draw bar for each month
-            ax.barh(0, 30, left=date, height=0.5, color=color, alpha=0.7, label=label if i == 0 or i == len(scores)-1 or (i > 0 and label != [d['score'] for d in self.monthly_analysis][i-1]) else "")
+            # Draw bar for each month with increased height for better visibility
+            ax.barh(0, 30, left=date, height=0.8, color=color, alpha=0.8, 
+                   label=label if i == 0 or i == len(scores)-1 or (i > 0 and label != [d['score'] for d in self.monthly_analysis][i-1]) else "")
             
-            # Add month label - Fixed the error by using timedelta
-            ax.text(date + timedelta(days=15), 0, date.strftime('%b'), ha='center', va='center', fontsize=10)
+            # Add month label with larger font
+            ax.text(date + timedelta(days=15), 0, date.strftime('%b'), ha='center', va='center', fontsize=12, fontweight='bold')
         
-        # Add critical dates as markers
+        # Add critical dates as markers with larger size
         if self.critical_dates:
             for date_data in self.critical_dates:
                 date = date_data['date']
                 prediction = date_data['prediction']
                 
                 if prediction == 'Rise':
-                    ax.scatter(date, 0, color='green', s=100, marker='^', zorder=5)
+                    ax.scatter(date, 0, color='green', s=150, marker='^', zorder=5, edgecolors='black', linewidth=2)
                 else:
-                    ax.scatter(date, 0, color='red', s=100, marker='v', zorder=5)
+                    ax.scatter(date, 0, color='red', s=150, marker='v', zorder=5, edgecolors='black', linewidth=2)
         
-        # Add key aspect transit dates
+        # Add key aspect transit dates with larger markers
         if self.monthly_analysis:
             for month_data in self.monthly_analysis:
                 month_date = month_data['date']
@@ -648,27 +667,30 @@ class StockZodiacAnalysis:
                     else:
                         color = 'lightgray'
                     
-                    # Add marker for transit
-                    ax.scatter(transit_date, 0.25, color=color, s=50, alpha=0.7, zorder=4)
+                    # Add marker for transit with larger size
+                    ax.scatter(transit_date, 0.4, color=color, s=100, alpha=0.8, zorder=4)
         
         # Formatting
-        ax.set_title(f'{self.stock_name} - Bullish/Bearish Timeline with Key Aspect Transits', fontsize=16, fontweight='bold')
+        ax.set_title(f'{self.stock_name} - Bullish/Bearish Timeline with Key Aspect Transits', 
+                     fontsize=18, fontweight='bold', pad=20)
         ax.set_yticks([])
         
-        # Format x-axis
+        # Format x-axis with larger font
         ax.xaxis.set_major_formatter(DateFormatter('%b %Y'))
         ax.xaxis.set_major_locator(MonthLocator())
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, fontsize=12)
         
-        # Add legend
+        # Add legend with larger font
         handles, labels = ax.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        ax.legend(by_label.values(), by_label.keys(), loc='upper right')
+        ax.legend(by_label.values(), by_label.keys(), loc='upper right', fontsize=12)
         
-        # Add grid
-        ax.grid(True, alpha=0.3, axis='x')
+        # Add grid with better visibility
+        ax.grid(True, alpha=0.3, axis='x', linestyle='--')
         
+        # Adjust layout
         plt.tight_layout()
+        
         return fig
     
     def create_trading_signals_chart(self):
@@ -676,8 +698,12 @@ class StockZodiacAnalysis:
         if not self.critical_dates:
             return None
         
-        # Create figure
-        fig, ax = plt.subplots(figsize=(14, 8))
+        # Create figure with proper size
+        fig, ax = plt.subplots(figsize=(16, 8))
+        
+        # Set background color for better visibility
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
         
         # Prepare data
         dates = [data['date'] for data in self.critical_dates]
@@ -685,42 +711,51 @@ class StockZodiacAnalysis:
         predictions = [data['prediction'] for data in self.critical_dates]
         significances = [data['significance'] for data in self.critical_dates]
         
-        # Create a scatter plot
+        # Create a scatter plot with larger markers
         colors = ['green' if pred == 'Rise' else 'red' for pred in predictions]
-        sizes = [150 if sig == 'High' else 100 for sig in significances]
+        sizes = [200 if sig == 'High' else 150 for sig in significances]
         
-        # Plot points
+        # Plot points with larger size and better visibility
         for i, (date, score, pred, sig) in enumerate(zip(dates, scores, predictions, significances)):
             if pred == 'Rise':
-                ax.scatter(date, score, color='green', s=sizes[i], alpha=0.7, edgecolors='black', marker='^')
+                ax.scatter(date, score, color='green', s=sizes[i], alpha=0.8, edgecolors='black', linewidth=2, marker='^')
                 ax.annotate(f"GO LONG\n{date.strftime('%Y-%m-%d')}\n{sig} Significance", 
-                           xy=(date, score), xytext=(0, 20),
+                           xy=(date, score), xytext=(0, 30),
                            textcoords='offset points', ha='center', va='bottom',
-                           bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.7))
+                           bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.8),
+                           arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'),
+                           fontsize=12, fontweight='bold')
             else:
-                ax.scatter(date, score, color='red', s=sizes[i], alpha=0.7, edgecolors='black', marker='v')
+                ax.scatter(date, score, color='red', s=sizes[i], alpha=0.8, edgecolors='black', linewidth=2, marker='v')
                 ax.annotate(f"GO SHORT\n{date.strftime('%Y-%m-%d')}\n{sig} Significance", 
-                           xy=(date, score), xytext=(0, -30),
+                           xy=(date, score), xytext=(0, -40),
                            textcoords='offset points', ha='center', va='top',
-                           bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.7))
+                           bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.8),
+                           arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'),
+                           fontsize=12, fontweight='bold')
         
-        # Add zero line
-        ax.axhline(y=0, color='black', linestyle='-', alpha=0.5)
+        # Add zero line with better visibility
+        ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, linewidth=2)
         
         # Formatting
         ax.set_title(f'{self.stock_name} - Trading Signals Based on Planetary Aspects', 
-                     fontsize=16, fontweight='bold')
-        ax.set_ylabel('Bullish/Bearish Score', fontsize=12)
-        ax.set_xlabel('Date', fontsize=12)
+                     fontsize=18, fontweight='bold', pad=20)
+        ax.set_ylabel('Bullish/Bearish Score', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Date', fontsize=14, fontweight='bold')
         
-        # Format x-axis
+        # Format x-axis with larger font
         ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, fontsize=12)
         
-        # Add grid
-        ax.grid(True, alpha=0.3)
+        # Format y-axis with larger font
+        plt.setp(ax.yaxis.get_majorticklabels(), fontsize=12)
         
+        # Add grid with better visibility
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        # Adjust layout
         plt.tight_layout()
+        
         return fig
     
     def create_critical_dates_chart(self):
@@ -728,8 +763,12 @@ class StockZodiacAnalysis:
         if not self.critical_dates:
             return None
         
-        # Create chart
-        fig, ax = plt.subplots(figsize=(14, 8))
+        # Create figure with proper size
+        fig, ax = plt.subplots(figsize=(16, 8))
+        
+        # Set background color for better visibility
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
         
         # Prepare data
         dates = [data['date'] for data in self.critical_dates]
@@ -741,44 +780,52 @@ class StockZodiacAnalysis:
         colors = ['green' if pred == 'Rise' else 'red' for pred in predictions]
         
         # Create size map based on significance
-        sizes = [100 if sig == 'High' else 50 for sig in significances]
+        sizes = [150 if sig == 'High' else 100 for sig in significances]
         
-        # Plot scatter
-        scatter = ax.scatter(dates, scores, c=colors, s=sizes, alpha=0.7, edgecolors='black')
+        # Plot scatter with larger markers
+        scatter = ax.scatter(dates, scores, c=colors, s=sizes, alpha=0.8, edgecolors='black', linewidth=2)
         
-        # Add zero line
-        ax.axhline(y=0, color='black', linestyle='-', alpha=0.5)
+        # Add zero line with better visibility
+        ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, linewidth=2)
         
-        # Add labels for each point
+        # Add labels for each point with larger font
         for i, (date, score, pred, sig) in enumerate(zip(dates, scores, predictions, significances)):
             ax.annotate(f"{pred}\n{sig}", xy=(date, score), xytext=(0, 20),
                         textcoords='offset points', ha='center', va='bottom',
-                        bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.7))
+                        bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.8),
+                        fontsize=12, fontweight='bold')
         
         # Formatting
         ax.set_title(f'{self.stock_name} - Critical Dates Prediction', 
-                     fontsize=16, fontweight='bold')
-        ax.set_ylabel('Bullish/Bearish Score', fontsize=12)
-        ax.set_xlabel('Date', fontsize=12)
+                     fontsize=18, fontweight='bold', pad=20)
+        ax.set_ylabel('Bullish/Bearish Score', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Date', fontsize=14, fontweight='bold')
         
-        # Format x-axis
+        # Format x-axis with larger font
         ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, fontsize=12)
         
-        # Add legend
+        # Format y-axis with larger font
+        plt.setp(ax.yaxis.get_majorticklabels(), fontsize=12)
+        
+        # Add legend with larger font
         from matplotlib.patches import Patch
         legend_elements = [
-            Patch(facecolor='green', alpha=0.7, label='Rise'),
-            Patch(facecolor='red', alpha=0.7, label='Fall'),
+            Patch(facecolor='green', alpha=0.8, label='Rise'),
+            Patch(facecolor='red', alpha=0.8, label='Fall'),
             plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='gray', 
-                      markersize=10, label='Medium Significance', linestyle='None'),
+                      markersize=12, label='Medium Significance', linestyle='None'),
             plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='gray', 
-                      markersize=15, label='High Significance', linestyle='None')
+                      markersize=16, label='High Significance', linestyle='None')
         ]
-        ax.legend(handles=legend_elements, loc='upper right')
+        ax.legend(handles=legend_elements, loc='upper right', fontsize=12)
         
-        ax.grid(True, alpha=0.3)
+        # Add grid with better visibility
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        # Adjust layout
         plt.tight_layout()
+        
         return fig
     
     def create_monthly_detail_chart(self, month_index, current_price=None):
@@ -794,19 +841,23 @@ class StockZodiacAnalysis:
         score = month_data['score']
         aspects = month_data['aspects']
         
-        # Create figure with GridSpec for more control
-        fig = plt.figure(figsize=(16, 12))
+        # Create figure with proper size
+        fig = plt.figure(figsize=(18, 14))
         gs = GridSpec(3, 2, height_ratios=[1, 2, 2], hspace=0.3)
+        
+        # Set background color for better visibility
+        fig.patch.set_facecolor('white')
         
         # Title
         ax_title = fig.add_subplot(gs[0, :])
         ax_title.axis('off')
         ax_title.text(0.5, 0.5, f'{month_name} {year} - Detailed Analysis', 
-                     ha='center', va='center', fontsize=18, fontweight='bold')
+                     ha='center', va='center', fontsize=20, fontweight='bold')
         
         # Score and performance
         ax_score = fig.add_subplot(gs[1, 0])
         ax_score.axis('off')
+        ax_score.set_facecolor('white')
         
         # Determine performance category
         if score > 7:
@@ -822,16 +873,17 @@ class StockZodiacAnalysis:
             performance = "Poor"
             color = 'red'
         
-        # Display score
-        ax_score.text(0.5, 0.7, f'Score: {score:.1f}/10', ha='center', va='center', fontsize=24, fontweight='bold')
-        ax_score.text(0.5, 0.4, f'Performance: {performance}', ha='center', va='center', fontsize=18, color=color, fontweight='bold')
+        # Display score with larger font
+        ax_score.text(0.5, 0.7, f'Score: {score:.1f}/10', ha='center', va='center', fontsize=28, fontweight='bold')
+        ax_score.text(0.5, 0.4, f'Performance: {performance}', ha='center', va='center', fontsize=20, color=color, fontweight='bold')
         
         # Key aspects
         ax_aspects = fig.add_subplot(gs[1, 1])
         ax_aspects.axis('off')
+        ax_aspects.set_facecolor('white')
         
-        # Display aspects
-        ax_aspects.text(0.5, 0.9, 'Key Planetary Aspects', ha='center', va='center', fontsize=16, fontweight='bold')
+        # Display aspects with larger font
+        ax_aspects.text(0.5, 0.9, 'Key Planetary Aspects', ha='center', va='center', fontsize=18, fontweight='bold')
         
         y_pos = 0.7
         for aspect in aspects:
@@ -848,11 +900,12 @@ class StockZodiacAnalysis:
                 color = 'gray'
             
             ax_aspects.text(0.5, y_pos, f'{planet} {aspect_type}: {influence} (Strength: {strength}/5)', 
-                           ha='center', va='center', fontsize=12, color=color)
-            y_pos -= 0.15
+                           ha='center', va='center', fontsize=14, color=color, fontweight='bold')
+            y_pos -= 0.18
         
         # Price projection for the month
         ax_price = fig.add_subplot(gs[2, :])
+        ax_price.set_facecolor('white')
         
         if current_price and self.price_projections:
             # Get the price data for this month
@@ -866,10 +919,10 @@ class StockZodiacAnalysis:
             month_dates = [d for d in daily_dates if start_date <= d <= end_date]
             month_prices = [daily_prices[daily_dates.index(d)] for d in month_dates]
             
-            # Plot price line
-            ax_price.plot(month_dates, month_prices, 'b-', linewidth=2, label='Projected Price')
+            # Plot price line with increased width
+            ax_price.plot(month_dates, month_prices, 'b-', linewidth=3, label='Projected Price')
             
-            # Add critical dates for this month
+            # Add critical dates for this month with larger markers
             if self.critical_dates:
                 month_critical_dates = [
                     date for date in self.critical_dates 
@@ -885,38 +938,46 @@ class StockZodiacAnalysis:
                     closest_index = month_dates.index(closest_date)
                     
                     if prediction == 'Rise':
-                        ax_price.scatter(closest_date, month_prices[closest_index], color='green', s=100, alpha=0.7, edgecolors='black')
+                        ax_price.scatter(closest_date, month_prices[closest_index], color='green', s=150, alpha=0.8, edgecolors='black', linewidth=2)
                         ax_price.annotate(f"Buy\n{date.strftime('%d')}", 
                                        xy=(closest_date, month_prices[closest_index]), xytext=(0, 20),
                                        textcoords='offset points', ha='center', va='bottom',
-                                       bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.7))
+                                       bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.8),
+                                       fontsize=12, fontweight='bold')
                     else:
-                        ax_price.scatter(closest_date, month_prices[closest_index], color='red', s=100, alpha=0.7, edgecolors='black')
+                        ax_price.scatter(closest_date, month_prices[closest_index], color='red', s=150, alpha=0.8, edgecolors='black', linewidth=2)
                         ax_price.annotate(f"Sell\n{date.strftime('%d')}", 
                                        xy=(closest_date, month_prices[closest_index]), xytext=(0, -30),
                                        textcoords='offset points', ha='center', va='top',
-                                       bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.7))
+                                       bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.8),
+                                       fontsize=12, fontweight='bold')
             
             # Formatting
-            ax_price.set_title(f'Price Projection for {month_name} {year}', fontsize=14, fontweight='bold')
-            ax_price.set_ylabel('Price ($)', fontsize=12)
-            ax_price.set_xlabel('Date', fontsize=12)
+            ax_price.set_title(f'Price Projection for {month_name} {year}', fontsize=16, fontweight='bold', pad=20)
+            ax_price.set_ylabel('Price ($)', fontsize=14, fontweight='bold')
+            ax_price.set_xlabel('Date', fontsize=14, fontweight='bold')
             
-            # Format x-axis
+            # Format x-axis with larger font
             ax_price.xaxis.set_major_formatter(DateFormatter('%d'))
-            plt.setp(ax_price.xaxis.get_majorticklabels(), rotation=45)
+            plt.setp(ax_price.xaxis.get_majorticklabels(), rotation=45, fontsize=12)
             
-            # Format y-axis
+            # Format y-axis with larger font
             ax_price.yaxis.set_major_formatter('${x:,.2f}')
+            plt.setp(ax_price.yaxis.get_majorticklabels(), fontsize=12)
             
-            # Add grid
-            ax_price.grid(True, alpha=0.3)
+            # Add legend with larger font
+            ax_price.legend(loc='upper left', fontsize=12)
+            
+            # Add grid with better visibility
+            ax_price.grid(True, alpha=0.3, linestyle='--')
         else:
             ax_price.axis('off')
             ax_price.text(0.5, 0.5, 'Price projection not available. Please provide current stock price.', 
-                        ha='center', va='center', fontsize=14)
+                        ha='center', va='center', fontsize=16)
         
+        # Adjust layout
         plt.tight_layout()
+        
         return fig
     
     def generate_monthly_report(self, month_index):
@@ -1263,17 +1324,20 @@ def main():
             fig_price = analysis.create_price_projection_chart(current_price)
             if fig_price:
                 st.pyplot(fig_price)
+                plt.close(fig_price)  # Close figure to free memory
         
         # Bullish/Bearish timeline
         st.markdown("#### Bullish/Bearish Timeline with Key Aspect Transits")
         fig_timeline = analysis.create_bullish_bearish_timeline()
         st.pyplot(fig_timeline)
+        plt.close(fig_timeline)  # Close figure to free memory
         
         # Trading signals chart
         st.markdown("#### Trading Signals")
         fig_signals = analysis.create_trading_signals_chart()
         if fig_signals:
             st.pyplot(fig_signals)
+            plt.close(fig_signals)  # Close figure to free memory
         
         col1, col2 = st.columns(2)
         
@@ -1281,6 +1345,7 @@ def main():
             st.markdown("#### Planetary Aspects Chart")
             fig1 = analysis.create_planetary_chart()
             st.pyplot(fig1)
+            plt.close(fig1)  # Close figure to free memory
         
         with col2:
             st.markdown("#### Critical Dates Chart")
@@ -1288,6 +1353,7 @@ def main():
                 fig3 = analysis.create_critical_dates_chart()
                 if fig3:
                     st.pyplot(fig3)
+                    plt.close(fig3)  # Close figure to free memory
         
         # Month selector for detailed analysis
         st.subheader("Monthly Detailed Analysis")
@@ -1305,6 +1371,7 @@ def main():
             fig_monthly = analysis.create_monthly_detail_chart(month_index, current_price)
             if fig_monthly:
                 st.pyplot(fig_monthly)
+                plt.close(fig_monthly)  # Close figure to free memory
             
             # Display detailed report for the selected month
             with st.expander(f"View Full Report for {selected_month}"):
