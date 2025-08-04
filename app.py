@@ -10,6 +10,7 @@ from matplotlib.dates import DateFormatter, MonthLocator
 import matplotlib.dates as mdates
 from matplotlib.gridspec import GridSpec
 from matplotlib.patches import Rectangle
+import matplotlib.dates as mdates
 
 # ======================
 # STOCK ZODIAC ANALYSIS
@@ -1044,20 +1045,20 @@ class StockZodiacAnalysis:
                            bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.8),
                            fontsize=12, fontweight='bold')
             
-            # Add bullish/bearish swing indicators
+            # Add bullish/bearish swing indicators using fill_between instead of Rectangle
             for i in range(1, len(month_prices)):
                 if month_prices[i] > month_prices[i-1]:
                     # Bullish swing
-                    ax.add_patch(Rectangle((month_dates[i-1], min(month_prices[i-1], month_prices[i])), 
-                                        (month_dates[i] - month_dates[i-1]).days, 
-                                        abs(month_prices[i] - month_prices[i-1]),
-                                        alpha=0.2, color='green'))
+                    ax.fill_between([mdates.date2num(month_dates[i-1]), mdates.date2num(month_dates[i])], 
+                                  [min(month_prices[i-1], month_prices[i]), min(month_prices[i-1], month_prices[i])], 
+                                  [month_prices[i-1], month_prices[i]], 
+                                  alpha=0.2, color='green')
                 else:
                     # Bearish swing
-                    ax.add_patch(Rectangle((month_dates[i-1], min(month_prices[i-1], month_prices[i])), 
-                                        (month_dates[i] - month_dates[i-1]).days, 
-                                        abs(month_prices[i] - month_prices[i-1]),
-                                        alpha=0.2, color='red'))
+                    ax.fill_between([mdates.date2num(month_dates[i-1]), mdates.date2num(month_dates[i])], 
+                                  [min(month_prices[i-1], month_prices[i]), min(month_prices[i-1], month_prices[i])], 
+                                  [month_prices[i-1], month_prices[i]], 
+                                  alpha=0.2, color='red')
             
             # Add critical dates for this month
             if self.critical_dates:
@@ -1075,13 +1076,13 @@ class StockZodiacAnalysis:
                     closest_index = month_dates.index(closest_date)
                     
                     if prediction == 'Rise':
-                        ax.axvline(x=closest_date, color='green', linestyle='--', alpha=0.7, linewidth=2)
-                        ax.text(closest_date, max(month_prices) * 0.95, "Bullish\nSignal", 
+                        ax.axvline(x=mdates.date2num(closest_date), color='green', linestyle='--', alpha=0.7, linewidth=2)
+                        ax.text(mdates.date2num(closest_date), max(month_prices) * 0.95, "Bullish\nSignal", 
                                ha='center', va='top', fontsize=12, fontweight='bold',
                                bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.8))
                     else:
-                        ax.axvline(x=closest_date, color='red', linestyle='--', alpha=0.7, linewidth=2)
-                        ax.text(closest_date, max(month_prices) * 0.95, "Bearish\nSignal", 
+                        ax.axvline(x=mdates.date2num(closest_date), color='red', linestyle='--', alpha=0.7, linewidth=2)
+                        ax.text(mdates.date2num(closest_date), max(month_prices) * 0.95, "Bearish\nSignal", 
                                ha='center', va='top', fontsize=12, fontweight='bold',
                                bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.8))
             
