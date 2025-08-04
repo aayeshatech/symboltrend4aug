@@ -9,6 +9,7 @@ import pandas as pd
 from matplotlib.dates import DateFormatter, MonthLocator
 import matplotlib.dates as mdates
 from matplotlib.gridspec import GridSpec
+from matplotlib.patches import Rectangle
 
 # ======================
 # STOCK ZODIAC ANALYSIS
@@ -980,6 +981,152 @@ class StockZodiacAnalysis:
         
         return fig
     
+    def create_monthly_swing_chart(self, month_index, current_price=None):
+        """Create a chart showing bullish/bearish swings with high and low points for a specific month"""
+        if not self.monthly_analysis or month_index >= len(self.monthly_analysis):
+            return None
+        
+        # Get the selected month data
+        month_data = self.monthly_analysis[month_index]
+        month_date = month_data['date']
+        month_name = month_data['month_name']
+        year = month_data['year']
+        score = month_data['score']
+        
+        # Create figure with proper size
+        fig, ax = plt.subplots(figsize=(16, 10))
+        
+        # Set background color for better visibility
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
+        
+        # Get the price data for this month
+        if current_price and self.price_projections:
+            start_date = month_date
+            end_date = month_date + timedelta(days=30)
+            
+            # Filter price data for this month
+            daily_dates = self.price_projections['daily_dates']
+            daily_prices = self.price_projections['daily_prices']
+            
+            month_dates = [d for d in daily_dates if start_date <= d <= end_date]
+            month_prices = [daily_prices[daily_dates.index(d)] for d in month_dates]
+            
+            # Plot price line with increased width
+            ax.plot(month_dates, month_prices, 'b-', linewidth=3, label='Price Movement')
+            
+            # Identify high and low points
+            high_points = []
+            low_points = []
+            
+            # Simple algorithm to find local maxima and minima
+            for i in range(1, len(month_prices) - 1):
+                if month_prices[i] > month_prices[i-1] and month_prices[i] > month_prices[i+1]:
+                    high_points.append((month_dates[i], month_prices[i]))
+                elif month_prices[i] < month_prices[i-1] and month_prices[i] < month_prices[i+1]:
+                    low_points.append((month_dates[i], month_prices[i]))
+            
+            # Plot high points
+            for date, price in high_points:
+                ax.scatter(date, price, color='green', s=150, marker='^', zorder=5, edgecolors='black', linewidth=2)
+                ax.annotate(f"High\n${price:.2f}", 
+                           xy=(date, price), xytext=(0, 20),
+                           textcoords='offset points', ha='center', va='bottom',
+                           bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.8),
+                           fontsize=12, fontweight='bold')
+            
+            # Plot low points
+            for date, price in low_points:
+                ax.scatter(date, price, color='red', s=150, marker='v', zorder=5, edgecolors='black', linewidth=2)
+                ax.annotate(f"Low\n${price:.2f}", 
+                           xy=(date, price), xytext=(0, -30),
+                           textcoords='offset points', ha='center', va='top',
+                           bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.8),
+                           fontsize=12, fontweight='bold')
+            
+            # Add bullish/bearish swing indicators
+            for i in range(1, len(month_prices)):
+                if month_prices[i] > month_prices[i-1]:
+                    # Bullish swing
+                    ax.add_patch(Rectangle((month_dates[i-1], min(month_prices[i-1], month_prices[i])), 
+                                        (month_dates[i] - month_dates[i-1]).days, 
+                                        abs(month_prices[i] - month_prices[i-1]),
+                                        alpha=0.2, color='green'))
+                else:
+                    # Bearish swing
+                    ax.add_patch(Rectangle((month_dates[i-1], min(month_prices[i-1], month_prices[i])), 
+                                        (month_dates[i] - month_dates[i-1]).days, 
+                                        abs(month_prices[i] - month_prices[i-1]),
+                                        alpha=0.2, color='red'))
+            
+            # Add critical dates for this month
+            if self.critical_dates:
+                month_critical_dates = [
+                    date for date in self.critical_dates 
+                    if start_date <= date['date'] <= end_date
+                ]
+                
+                for date_data in month_critical_dates:
+                    date = date_data['date']
+                    prediction = date_data['prediction']
+                    
+                    # Find the closest date in month_dates to the critical date
+                    closest_date = min(month_dates, key=lambda d: abs(d - date))
+                    closest_index = month_dates.index(closest_date)
+                    
+                    if prediction == 'Rise':
+                        ax.axvline(x=closest_date, color='green', linestyle='--', alpha=0.7, linewidth=2)
+                        ax.text(closest_date, max(month_prices) * 0.95, "Bullish\nSignal", 
+                               ha='center', va='top', fontsize=12, fontweight='bold',
+                               bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.8))
+                    else:
+                        ax.axvline(x=closest_date, color='red', linestyle='--', alpha=0.7, linewidth=2)
+                        ax.text(closest_date, max(month_prices) * 0.95, "Bearish\nSignal", 
+                               ha='center', va='top', fontsize=12, fontweight='bold',
+                               bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.8))
+            
+            # Formatting
+            ax.set_title(f'{month_name} {year} - Bullish/Bearish Swings with High/Low Points', 
+                         fontsize=18, fontweight='bold', pad=20)
+            ax.set_ylabel('Price ($)', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Date', fontsize=14, fontweight='bold')
+            
+            # Format x-axis with larger font
+            ax.xaxis.set_major_formatter(DateFormatter('%d'))
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, fontsize=12)
+            
+            # Format y-axis with larger font
+            ax.yaxis.set_major_formatter('${x:,.2f}')
+            plt.setp(ax.yaxis.get_majorticklabels(), fontsize=12)
+            
+            # Add legend with larger font
+            ax.legend(loc='upper left', fontsize=12)
+            
+            # Add grid with better visibility
+            ax.grid(True, alpha=0.3, linestyle='--')
+            
+            # Add overall trend indicator
+            trend_color = 'green' if score > 5 else 'red'
+            trend_text = 'Bullish Month' if score > 5 else 'Bearish Month'
+            ax.text(0.02, 0.95, f"Overall Trend: {trend_text}", transform=ax.transAxes,
+                   fontsize=14, fontweight='bold', color=trend_color,
+                   bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.8))
+            
+            # Adjust layout
+            plt.tight_layout()
+            
+            return fig
+        else:
+            # If no price data available, show a message
+            ax.axis('off')
+            ax.text(0.5, 0.5, 'Price projection not available. Please provide current stock price.', 
+                    ha='center', va='center', fontsize=16)
+            
+            # Adjust layout
+            plt.tight_layout()
+            
+            return fig
+    
     def generate_monthly_report(self, month_index):
         """Generate a detailed report for a specific month"""
         if not self.monthly_analysis or month_index >= len(self.monthly_analysis):
@@ -1372,6 +1519,13 @@ def main():
             if fig_monthly:
                 st.pyplot(fig_monthly)
                 plt.close(fig_monthly)  # Close figure to free memory
+            
+            # Display the new monthly swing chart
+            st.markdown(f"#### {selected_month} - Bullish/Bearish Swings with High/Low Points")
+            fig_swing = analysis.create_monthly_swing_chart(month_index, current_price)
+            if fig_swing:
+                st.pyplot(fig_swing)
+                plt.close(fig_swing)  # Close figure to free memory
             
             # Display detailed report for the selected month
             with st.expander(f"View Full Report for {selected_month}"):
