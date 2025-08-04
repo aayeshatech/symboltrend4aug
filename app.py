@@ -1,3 +1,5 @@
+# app.py - Fixed Stock Zodiac Analysis Program
+
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,21 +15,26 @@ import matplotlib.dates as mdates
 # ======================
 
 class StockZodiacAnalysis:
-    def __init__(self, stock_name, zodiac_sign, incorporation_date=None):
+    def __init__(self, stock_name, zodiac_sign=None, incorporation_date=None):
         """
         Initialize the stock zodiac analysis
         
         Parameters:
         - stock_name: Name of the stock
-        - zodiac_sign: Zodiac sign of the stock (Aries, Taurus, etc.)
+        - zodiac_sign: Zodiac sign of the stock (optional, will be determined if not provided)
         - incorporation_date: Date when the stock was incorporated (optional)
         """
         self.stock_name = stock_name
-        self.zodiac_sign = zodiac_sign
         self.incorporation_date = incorporation_date if incorporation_date else datetime.now().date()
         
+        # Determine zodiac sign if not provided
+        if zodiac_sign:
+            self.zodiac_sign = zodiac_sign
+        else:
+            self.zodiac_sign = self._determine_zodiac_sign(stock_name)
+        
         # Get zodiac sign angle
-        self.zodiac_angle = self._get_zodiac_angle(zodiac_sign)
+        self.zodiac_angle = self._get_zodiac_angle(self.zodiac_sign)
         
         # Get current planetary positions
         self.planetary_positions = self._get_planetary_positions()
@@ -39,6 +46,31 @@ class StockZodiacAnalysis:
         self.trend_prediction = None
         self.best_month = None
         self.critical_dates = None
+    
+    def _determine_zodiac_sign(self, stock_name):
+        """
+        Determine the zodiac sign based on the stock name
+        This is a simplified approach - in a real application, you might use more sophisticated methods
+        """
+        # Convert stock name to uppercase for consistent processing
+        stock_name = stock_name.upper()
+        
+        # Simple hash function to map stock name to zodiac sign
+        # This is just an example - you can use any method you prefer
+        hash_value = sum(ord(char) for char in stock_name)
+        zodiac_index = hash_value % 12
+        
+        zodiac_signs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+                       'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
+        
+        return zodiac_signs[zodiac_index]
+    
+    def _get_zodiac_from_angle(self, angle):
+        """Convert angle to zodiac sign"""
+        zodiacs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+                   'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
+        index = int(angle // 30) % 12
+        return zodiacs[index]
     
     def _get_zodiac_angle(self, zodiac_sign):
         """Convert zodiac sign to angle"""
@@ -597,13 +629,17 @@ def main():
     # Stock name input
     stock_name = st.sidebar.text_input("Stock Name", value="AAPL")
     
-    # Zodiac sign selection
-    zodiac_signs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+    # Zodiac sign selection (optional)
+    zodiac_signs = ['Auto-detect', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                     'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
-    selected_zodiac = st.sidebar.selectbox("Zodiac Sign", zodiac_signs)
+    selected_zodiac = st.sidebar.selectbox("Zodiac Sign (Optional)", zodiac_signs, index=0)
+    
+    # Convert "Auto-detect" to None for processing
+    if selected_zodiac == "Auto-detect":
+        selected_zodiac = None
     
     # Incorporation date (optional)
-    incorporation_date = st.sidebar.date_input("Incorporation Date (optional)", 
+    incorporation_date = st.sidebar.date_input("Incorporation Date (Optional)", 
                                              datetime.now().date() - timedelta(days=365*5))
     
     # Analyze button
@@ -620,7 +656,11 @@ def main():
         
         # Display stock information
         st.header(f"{stock_name} Analysis")
-        st.subheader(f"Zodiac Sign: {selected_zodiac}")
+        st.subheader(f"Zodiac Sign: {analysis.zodiac_sign}")
+        
+        # Display how zodiac sign was determined
+        if selected_zodiac is None:
+            st.info(f"Zodiac sign automatically determined based on stock name: {stock_name}")
         
         # Display planetary positions
         st.subheader("Current Planetary Positions")
