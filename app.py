@@ -880,16 +880,20 @@ class StockZodiacAnalysis:
                     date = date_data['date']
                     prediction = date_data['prediction']
                     
+                    # Find the closest date in month_dates to the critical date
+                    closest_date = min(month_dates, key=lambda d: abs(d - date))
+                    closest_index = month_dates.index(closest_date)
+                    
                     if prediction == 'Rise':
-                        ax_price.scatter(date, month_prices[month_dates.index(date)], color='green', s=100, alpha=0.7, edgecolors='black')
+                        ax_price.scatter(closest_date, month_prices[closest_index], color='green', s=100, alpha=0.7, edgecolors='black')
                         ax_price.annotate(f"Buy\n{date.strftime('%d')}", 
-                                       xy=(date, month_prices[month_dates.index(date)]), xytext=(0, 20),
+                                       xy=(closest_date, month_prices[closest_index]), xytext=(0, 20),
                                        textcoords='offset points', ha='center', va='bottom',
                                        bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.7))
                     else:
-                        ax_price.scatter(date, month_prices[month_dates.index(date)], color='red', s=100, alpha=0.7, edgecolors='black')
+                        ax_price.scatter(closest_date, month_prices[closest_index], color='red', s=100, alpha=0.7, edgecolors='black')
                         ax_price.annotate(f"Sell\n{date.strftime('%d')}", 
-                                       xy=(date, month_prices[month_dates.index(date)]), xytext=(0, -30),
+                                       xy=(closest_date, month_prices[closest_index]), xytext=(0, -30),
                                        textcoords='offset points', ha='center', va='top',
                                        bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.7))
             
